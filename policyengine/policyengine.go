@@ -3,10 +3,15 @@ package policyengine
 import (
 	"log"
 	"sync"
-	"time"
+	 "encoding/json"
+	"bytes"
+	"io"
+	"os"
 
+	"fmt"
 	"../common"
 	"../consulib"
+	"net/http"
 )
 
 type dcData map[string]*common.DC
@@ -21,6 +26,10 @@ type PE struct {
 	Current_DS_Index uint64
 
 	Lck sync.Mutex
+}
+
+type PErequest struct{
+	UnSupress string
 }
 
 func NewPE(config *common.ConsulConfig) *PE {
@@ -46,7 +55,7 @@ func (this *PE) ApplyNewPolicy() {
 		//<-common.
 		//Apply the this.Policy and take a decision
 
-		//<-common.TriggerPolicyCh
+		<-common.TriggerPolicyCh
 
 		log.Println("ApplyNewPolicy: Called")
 
@@ -102,25 +111,6 @@ func (this *PE) UpdatePolicyFromDS(config *common.ConsulConfig) {
 
 }
 
-func getTheConsulAndDCpointers() {
-
-	for {
-
-		log.Println("getTheConsulAndDCpointers: Lopping thorugh to get the global maps")
-
-		common.ALLDCs.Lck.Lock()
-		dcDataList = common.ALLDCs.List
-		common.ALLDCs.Lck.Unlock()
-
-		if dcDataList != nil && !common.IsCommonMapEmpty() {
-			log.Println("getTheConsulAndDCpointers: Got common.ALLDCs ", dcDataList)
-			break
-		}
-		<-time.After(2 * time.Second)
-	}
-	log.Println("getTheConsulAndDCpointers: returning")
-	return
-}
 
 // BootStrapPolicy is used to booststap policy
 //
@@ -129,6 +119,7 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 	log.Println("BootStrapPolicy: Called")
 
 	data, resultingIndex, ok := this.WatchStore(this.Current_DS_Index)
+		fmt.Println("the dc is Leader ",config.IsLeader,this.Current_DS_Index,resultingIndex,ok)
 
 	if ok && (this.Current_DS_Index < resultingIndex) {
 
@@ -139,7 +130,8 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 			}
 			//Since this gosspier is the leader he will unsupress the framewokrs
 			log.Println("BootStrapPolicy: calling the Unsupress")
-			common.UnSupressFrameWorks()
+			//common.UnSupressFrameWorks()
+			UnSupress()
 		}
 		//set the new ModifiedIndex
 		this.Current_DS_Index = resultingIndex
@@ -162,12 +154,25 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 
 }
 
+func UnSupress(){
+	resp := PErequest {
+		UnSupress: "true",
+	}
+
+	//json.Marshal(res)
+	 b := new(bytes.Buffer)
+    json.NewEncoder(b).Encode(resp)
+
+	res, _ := http.Post("http://54.201.4.103:8080/v1/UNSUPRESS", "application/json; charset=utf-8",b)
+	io.Copy(os.Stdout, res.Body)
+}
+
 //Entry point for the policy engine
 func Run(config *common.ConsulConfig) {
+//func Run(c chan string) {
 
 	log.Println("Run: PolicyEngine run called")
 
-	getTheConsulAndDCpointers()
 
 	pe := NewPE(config)
 

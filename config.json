@@ -1,1 +1,1 @@
-{ "isLeader" : true, "DCEndpoint" : "52.59.253.150:8500", "StorePreFix": "Federa", "dcName" : "New Delhi" }
+{"consulConfig":{ "isLeader" : true, "DCEndpoint" : "54.201.4.103:8500", "StorePreFix": "Federa" }}

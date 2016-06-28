@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	"log"
+//	"log"
 	"sync"
 )
 
@@ -29,11 +29,6 @@ type alldcs struct {
 	List map[string]*DC
 }
 
-/*type rttbwGossipers struct {
-	Lck  sync.Mutex
-	List map[string]int64
-}
-*/
 type toanon struct {
 	Ch  chan bool
 	M   map[string]bool
@@ -58,7 +53,6 @@ var (
 	ThisCountry        string    //This Datacentes Country
 	ResourceThresold   int       //Threshold value of any resource (CPU, MEM or Disk) after which we need to broadcast OOR
 	TriggerPolicyCh    chan bool //Polcy Engine will listen in this Channel
-//	RttOfPeerGossipers rttbwGossipers
 )
 
 
@@ -69,59 +63,7 @@ func init() {
 	TriggerPolicyCh = make(chan bool)
 	ALLDCs.List = make(map[string]*DC)
 	ResourceThresold = 100
-//	RttOfPeerGossipers.List = make(map[string]int64)
 	fmt.Printf("Initalizeing Common")
-
-}
-
-
-func SupressFrameWorks() {
-
-	log.Println("SupressFrameWorks: called")
-	ToAnon.Lck.Lock()
-	for k := range ToAnon.M {
-		ToAnon.M[k] = true
-	}
-	ToAnon.Lck.Unlock()
-
-	ToAnon.Ch <- true
-
-	// we set the IsActiveDC flag to TRUE
-	_, available := ALLDCs.List[ThisDCName]
-	if !available {
-		log.Printf("SupressFrameWorks: DC information not available")
-		return
-	}
-
-	ALLDCs.List[ThisDCName].IsActiveDC = false
-	log.Println("SupressFrameWorks: returning")
-
-}
-
-func UnSupressFrameWorks() {
-	log.Println("UnSupressFrameWorks: called")
-	ToAnon.Lck.Lock()
-	for k := range ToAnon.M {
-		ToAnon.M[k] = false
-	}
-	ToAnon.Lck.Unlock()
-
-	ToAnon.Ch <- true
-
-	// we set the IsActiveDC flag to TRUE
-	_, available := ALLDCs.List[ThisDCName]
-	if !available {
-		log.Printf("UnSupressFrameWorks: DC information not available")
-		return
-	}
-
-	ALLDCs.List[ThisDCName].IsActiveDC = true
-
-	log.Println("UnSupressFrameWorks: returning")
-}
-
-func IsCommonMapEmpty() bool {
-	return (len(ToAnon.M) == 0)
 
 }
 
