@@ -119,16 +119,15 @@ func (this *RuleMinMax) SupressoRUnSupress(policydecision *PolicyDecision) {
 
 	if policydecision.SortedDCName[0] == common.ThisDCName {
 		log.Println("SupressoRUnSupress: Current DC will be unspressed", policydecision.SortedDCName[0])
-		//common.UnSupressFrameWorks()
-		 UnSupress()
-		
+		dat := "false"
+                common.UnSupress(dat)
 
 		//unsupress
 	} else {
 		//spress
 		log.Println("SupressoRUnSupress: Current DC will be supressed", common.ThisDCName, "DC ", policydecision.SortedDCName[0], " Will receive all offers")
-		//common.SupressFrameWorks()
-		 UnSupress()
+		da := "true"
+                common.UnSupress(da)
 	}
 
 }

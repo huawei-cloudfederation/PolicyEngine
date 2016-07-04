@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"../common"
+	"strconv"
 )
 
 type RuleThreshold struct {
@@ -16,6 +17,8 @@ func (this *RuleThreshold) ApplyRule(policydecision *PolicyDecision) bool {
 	//set the DC thershold
 	//no chnage the dataset
 	common.ResourceThresold = this.ResourceLimit
+	dat := strconv.Itoa(common.ResourceThresold)
+	common.ThreshholdCh(dat)
 	log.Println("ApplyRule: RuleThreshold setting the Threshold", common.ResourceThresold)
 	return true
 }

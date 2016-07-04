@@ -4,14 +4,13 @@ import (
 	"log"
 	"sync"
 	 "encoding/json"
-	"bytes"
-	"io"
-	"os"
+	 "io/ioutil"
 
 	"fmt"
 	"../common"
 	"../consulib"
 	"net/http"
+	"time"
 )
 
 type dcData map[string]*common.DC
@@ -28,9 +27,23 @@ type PE struct {
 	Lck sync.Mutex
 }
 
-type PErequest struct{
-	UnSupress string
+type AllDC struct {
+        Name          string
+        City          string
+        Country       string
+        Endpoint      string
+        CPU           float64
+        MEM           float64
+        DISK          float64
+        Ucpu          float64 //Remaining CPU
+        Umem          float64 //Remaining Memory
+        Udisk         float64 //Remaining Disk
+        LastUpdate    int64   //Time stamp of current DC status
+        LastOOR       int64   //Time stamp of when was the last OOR Happpend
+        IsActiveDC    bool
+        OutOfResource bool
 }
+
 
 func NewPE(config *common.ConsulConfig) *PE {
 	newPE := &PE{Current_DS_Index: 0}
@@ -54,6 +67,7 @@ func (this *PE) ApplyNewPolicy() {
 	for {
 		//<-common.
 		//Apply the this.Policy and take a decision
+		fmt.Println("I am inside ApplyNewPolicy()\n")
 
 		<-common.TriggerPolicyCh
 
@@ -111,7 +125,6 @@ func (this *PE) UpdatePolicyFromDS(config *common.ConsulConfig) {
 
 }
 
-
 // BootStrapPolicy is used to booststap policy
 //
 func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
@@ -130,8 +143,8 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 			}
 			//Since this gosspier is the leader he will unsupress the framewokrs
 			log.Println("BootStrapPolicy: calling the Unsupress")
-			//common.UnSupressFrameWorks()
-			UnSupress()
+			dat := "false"
+			common.UnSupress(dat)
 		}
 		//set the new ModifiedIndex
 		this.Current_DS_Index = resultingIndex
@@ -153,32 +166,62 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 	log.Println("BootStrapPolicy: returning from BootStrapPolicy")
 
 }
-
-func UnSupress(){
-	resp := PErequest {
-		UnSupress: "true",
-	}
-
-	//json.Marshal(res)
-	 b := new(bytes.Buffer)
-    json.NewEncoder(b).Encode(resp)
-
-	res, _ := http.Post("http://54.201.4.103:8080/v1/UNSUPRESS", "application/json; charset=utf-8",b)
-	io.Copy(os.Stdout, res.Body)
-}
-
 //Entry point for the policy engine
 func Run(config *common.ConsulConfig) {
-//func Run(c chan string) {
 
 	log.Println("Run: PolicyEngine run called")
 
-
 	pe := NewPE(config)
+	go pe.GetAllDCdata() 
 
 	pe.BootStrapPolicy(config)
 
 	go pe.UpdatePolicyFromDS(config)
 	go pe.ApplyNewPolicy()
+
+}
+
+func (this *PE) GetAllDCdata(){
+        for {
+        url := "http://"+ common.GossiperIp + ":8080/v1/ALLDCSTATUS"
+        res, err := http.Get(url)
+
+            if err != nil {
+                panic(err.Error())
+            }
+
+            body, err := ioutil.ReadAll(res.Body)
+
+            if err != nil {
+                panic(err.Error())
+            }
+
+            var data []AllDC
+            json.Unmarshal(body, &data)
+                common.ALLDCs.Lck.Lock()
+                var dc common.DC
+                common.ALLDCs.List[dc.Name] = &dc
+                for _, v := range data{
+
+                dc.Name = v.Name
+                dc.City = v.City
+                dc.Country = v.Country
+                dc.Endpoint = v.Endpoint
+                dc.CPU = v.CPU
+                dc.MEM = v.MEM
+                dc.DISK = v.DISK
+                dc.Ucpu = v.Ucpu
+                dc.Umem = v.Umem
+                dc.Udisk = v.Udisk
+                dc.OutOfResource = v.OutOfResource
+                dc.IsActiveDC = v.IsActiveDC
+                dc.LastUpdate = v.LastUpdate
+                dc.LastOOR = v.LastOOR
+                }
+                fmt.Println("I am in main\n",common.ALLDCs.List)
+                dcDataList = common.ALLDCs.List
+                 common.ALLDCs.Lck.Unlock()
+                time.Sleep(5 * time.Second)
+        }
 
 }

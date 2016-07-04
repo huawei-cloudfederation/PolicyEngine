@@ -2,8 +2,12 @@ package common
 
 import (
 	"fmt"
-//	"log"
 	"sync"
+	"net/http"
+	"bytes"
+	 "encoding/json"
+	"io"
+        "os"
 )
 
 //Declare some structure that will eb common for both Anonymous and Gossiper modulesv
@@ -29,12 +33,6 @@ type alldcs struct {
 	List map[string]*DC
 }
 
-type toanon struct {
-	Ch  chan bool
-	M   map[string]bool
-	Lck sync.Mutex
-}
-
 //global consul config
 type ConsulConfig struct {
 	IsLeader    bool
@@ -43,23 +41,25 @@ type ConsulConfig struct {
 	DCName      string
 }
 
+type PErequest struct{
+        UnSupress string
+}
+
+type SetThreshhold struct{
+        Threshhold  string
+}
+
 //Declare somecommon types that will be used accorss the goroutines
 var (
-	ToAnon             toanon    //Structure Sending messages to FedComms module via TCP client
 	ALLDCs             alldcs    //The data structure that stores all the Datacenter information
 	ThisDCName         string    //This DataCenter's Name
-	ThisEP             string    //Thsi Datacenter's Endpoint
-	ThisCity           string    //This Datacenters City
-	ThisCountry        string    //This Datacentes Country
 	ResourceThresold   int       //Threshold value of any resource (CPU, MEM or Disk) after which we need to broadcast OOR
 	TriggerPolicyCh    chan bool //Polcy Engine will listen in this Channel
+	GossiperIp       string
 )
 
 
 func init() {
-
-	ToAnon.M = make(map[string]bool)
-	ToAnon.Ch = make(chan bool)
 	TriggerPolicyCh = make(chan bool)
 	ALLDCs.List = make(map[string]*DC)
 	ResourceThresold = 100
@@ -67,3 +67,30 @@ func init() {
 
 }
 
+func UnSupress(dat string){
+	var resp PErequest
+	resp.UnSupress = dat
+	fmt.Println("resp.UnSupress is \n",resp.UnSupress)
+
+         b := new(bytes.Buffer)
+	 json.NewEncoder(b).Encode(resp)
+
+        url := "http://" + GossiperIp + ":8080/v1/UNSUPRESS"
+	fmt.Println("url is \n",url)
+        res, _ := http.Post(url, "application/json; charset=utf-8",b)
+        io.Copy(os.Stdout, res.Body)
+}
+
+func ThreshholdCh(dat string){
+        var resp SetThreshhold 
+        resp.Threshhold = dat
+        fmt.Println("resp.Threshhold  is \n",resp.Threshhold )
+
+         b := new(bytes.Buffer)
+         json.NewEncoder(b).Encode(resp)
+
+        url := "http://" + GossiperIp + ":8080/v1/THRESHHOLD/"
+        fmt.Println("url is \n",url)
+        res, _ := http.Post(url, "application/json; charset=utf-8",b)
+        io.Copy(os.Stdout, res.Body)
+}

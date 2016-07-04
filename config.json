@@ -1,1 +1,9 @@
-{"consulConfig":{ "isLeader" : true, "DCEndpoint" : "54.201.4.103:8500", "StorePreFix": "Federa" }}
+{
+	"Name": "1",
+	"GossiperIP": "54.191.139.104",
+	"consulConfig": {
+		"isLeader": true,
+		"DCEndpoint": "54.191.139.104:8500",
+		"StorePreFix": "Federa"
+	}
+}
