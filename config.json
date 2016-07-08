@@ -1,0 +1,9 @@
+{
+	"Name": "1",
+	"GossiperIP": "54.218.111.79",
+	"consulConfig": {
+		"isLeader": true,
+		"DCEndpoint": "54.218.111.79:8500",
+		"StorePreFix": "Federa"
+	}
+}
