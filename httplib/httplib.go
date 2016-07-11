@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 
 	"../common"
+	"../policyengine"
 )
 
 type MainController struct {
@@ -21,17 +22,16 @@ func (this *MainController) TriggerPolicy(){
         var data  Triggerrequest
         this.Data["Policy"] = this.Ctx.Input.Param(":Policy")
 
-	log.Println("TriggerPolicyCh called in gossiper:\n")
+	log.Println("TriggerPolicyCh called :\n")
         err := json.Unmarshal(this.Ctx.Input.RequestBody,&data)
-           log.Println(this.Ctx.Input.RequestBody)
         if err != nil {
-                this.Ctx.Output.Body(this.Ctx.Input.RequestBody)
-                log.Println(this.Ctx.Input.RequestBody)
+		log.Printf("Json Unmarshall error = %v", err)
         return
     }
 	this.Ctx.Output.Body(this.Ctx.Input.RequestBody)
-                log.Println(string(this.Ctx.Input.RequestBody),"::",data)
-	if data.Policy {
+
+	if data.Policy == true {
+		policyengine.GetAllDCdata()
 		common.TriggerPolicyCh<-true
 	}
 }

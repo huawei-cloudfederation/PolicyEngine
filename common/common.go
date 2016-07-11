@@ -1,13 +1,13 @@
 package common
 
 import (
-	"fmt"
 	"sync"
 	"net/http"
 	"bytes"
 	 "encoding/json"
 	"io"
         "os"
+	"log"
 )
 
 //Declare some structure that will eb common for both Anonymous and Gossiper modulesv
@@ -63,34 +63,36 @@ func init() {
 	TriggerPolicyCh = make(chan bool)
 	ALLDCs.List = make(map[string]*DC)
 	ResourceThresold = 100
-	fmt.Printf("Initalizeing Common")
-
 }
 
-func UnSupress(data bool){
+func UnSupress(unsupress bool){
 	var resp PErequest
-	resp.UnSupress = data
-	fmt.Println("resp.UnSupress is \n",resp.UnSupress)
+	resp.UnSupress = unsupress
 
-         b := new(bytes.Buffer)
-	 json.NewEncoder(b).Encode(resp)
+         data := new(bytes.Buffer)
+	 err := json.NewEncoder(data).Encode(resp)
+	 if err != nil {
+		 log.Println("Error Marshalling the response")
+		return
+	}
 
         url := "http://" + GossiperIp + ":8080/v1/UNSUPRESS"
-	fmt.Println("url is \n",url)
-        res, _ := http.Post(url, "application/json; charset=utf-8",b)
+        res, _ := http.Post(url, "application/json; charset=utf-8",data)
         io.Copy(os.Stdout, res.Body)
 }
 
-func ThreshholdCh(data int){
+func ThreshholdCh(threshhold int){
         var resp SetThreshhold 
-        resp.Threshhold = data
-        fmt.Println("resp.Threshhold  is \n",resp.Threshhold )
+        resp.Threshhold = threshhold
 
-         b := new(bytes.Buffer)
-         json.NewEncoder(b).Encode(resp)
+         data := new(bytes.Buffer)
+         err := json.NewEncoder(data).Encode(resp)
+	 if err != nil {
+                 log.Println("Error Marshalling the response")
+                return
+        }
 
         url := "http://" + GossiperIp + ":8080/v1/THRESHHOLD/"
-        fmt.Println("url is \n",url)
-        res, _ := http.Post(url, "application/json; charset=utf-8",b)
+        res, _ := http.Post(url, "application/json; charset=utf-8",data)
         io.Copy(os.Stdout, res.Body)
 }

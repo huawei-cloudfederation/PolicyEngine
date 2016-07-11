@@ -52,17 +52,9 @@ func (this *RuleMinMax) GetnewDCarrangment(policydecision *PolicyDecision) bool 
 
 		if gossiperDcInfo.CPU == 0 || gossiperDcInfo.MEM == 0 || gossiperDcInfo.DISK == 0 {
 			log.Println("GetnewDCarrangment: Cannot apply policy since the total CPU or total MEM ot DISK in", gossiperDCName, "DC is nil")
-			//return false
 			continue
 		}
-		//cpuPercentage = ((gossiperDcInfo.CPU - gossiperDcInfo.Ucpu) / gossiperDcInfo.CPU) * 100
-		//memPercentage = ((gossiperDcInfo.MEM - gossiperDcInfo.Umem) / gossiperDcInfo.MEM) * 100
 
-		//TODO: not the right place to decide
-		/*if cpuPercentage >= this.RecosurceLimit || memPercentage >= this.RecosurceLimit || diskPercentage >= this.RecosurceLimit {
-			log.Println("IsCurrentDCWithInPolicyThershold: DC burst ", cpuPercentage, memPercentage, diskPercentage)
-			return false
-		}*/
 		log.Println("GetnewDCarrangment: The cpupercentage is ", gossiperDcInfo.CPU, " for DC", gossiperDCName)
 		policydecision.SortValue[index] = (gossiperDcInfo.CPU)
 	}
@@ -119,13 +111,15 @@ func (this *RuleMinMax) SupressoRUnSupress(policydecision *PolicyDecision) {
 
 	if policydecision.SortedDCName[0] == common.ThisDCName {
 		log.Println("SupressoRUnSupress: Current DC will be unspressed", policydecision.SortedDCName[0])
-                common.UnSupress(true)
+		data := true
+                common.UnSupress(data)
 
 		//unsupress
 	} else {
 		//spress
 		log.Println("SupressoRUnSupress: Current DC will be supressed", common.ThisDCName, "DC ", policydecision.SortedDCName[0], " Will receive all offers")
-                common.UnSupress(false)
+		data := false
+                common.UnSupress(data)
 	}
 
 }

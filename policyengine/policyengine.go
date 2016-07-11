@@ -10,7 +10,6 @@ import (
 	"../common"
 	"../consulib"
 	"net/http"
-	"time"
 )
 
 type dcData map[string]*common.DC
@@ -48,9 +47,7 @@ func NewPE(config *common.ConsulConfig) *PE {
 func (this *PE) ApplyNewPolicy() {
 
 	for {
-		//<-common.
 		//Apply the this.Policy and take a decision
-		fmt.Println("I am inside ApplyNewPolicy()\n")
 
 		<-common.TriggerPolicyCh
 
@@ -103,7 +100,6 @@ func (this *PE) UpdatePolicyFromDS(config *common.ConsulConfig) {
 			}
 			this.Lck.Unlock()
 		}
-		//time.Sleep(5 * time.Second)
 	}
 
 }
@@ -126,7 +122,8 @@ func (this *PE) BootStrapPolicy(config *common.ConsulConfig) {
 			}
 			//Since this gosspier is the leader he will unsupress the framewokrs
 			log.Println("BootStrapPolicy: calling the Unsupress")
-			common.UnSupress(true)
+			data := true
+			common.UnSupress(data)
 		}
 		//set the new ModifiedIndex
 		this.Current_DS_Index = resultingIndex
@@ -154,7 +151,7 @@ func Run(config *common.ConsulConfig) {
 	log.Println("Run: PolicyEngine run called")
 
 	pe := NewPE(config)
-	go pe.GetAllDCdata() 
+	GetAllDCdata() 
 
 	pe.BootStrapPolicy(config)
 
@@ -163,38 +160,34 @@ func Run(config *common.ConsulConfig) {
 
 }
 
-func (this *PE) GetAllDCdata(){
-        for {
+func  GetAllDCdata(){
+	log.Println("GetAllDCdata called")
         url := "http://"+ common.GossiperIp + ":8080/v1/ALLDCSTATUS"
         res, err := http.Get(url)
 
             if err != nil {
-                panic(err.Error())
+		log.Println("Server error %v",err)			
             }
 
             body, err := ioutil.ReadAll(res.Body)
 
             if err != nil {
-                panic(err.Error())
+		log.Println("response error %v",err)
             }
 
             var data []common.DC
             err=json.Unmarshal(body, &data)
 		if err!=nil{
-			fmt.Println("I am inGetAllDCdata ",err)
+			log.Printf("Json Unmarshall error = %v", err)
 			return
 		}
 
-		fmt.Println("I am inGetAllDCdata ",data)
                 common.ALLDCs.Lck.Lock()
                 for i, v := range data{
 
 			common.ALLDCs.List[v.Name]=&data[i]
 		}
-                fmt.Println("I am in main\n",common.ALLDCs.List)
                 dcDataList = common.ALLDCs.List
                  common.ALLDCs.Lck.Unlock()
-                time.Sleep(5 * time.Second)
-        }
 
 }
